@@ -1,0 +1,5 @@
+/.env
+/credentials_calendar.json
+/credentials_gmail.json
+/db
+/__pycache__

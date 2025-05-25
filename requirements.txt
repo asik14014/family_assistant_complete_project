@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-dotenv
+openai
+requests
+cryptography
+sqlalchemy
+pydantic
+python-telegram-bot==20.*
+google-api-python-client
+google-auth
+google-auth-oauthlib
+chromadb
+langchain-openai
+numpy
