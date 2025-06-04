@@ -119,7 +119,7 @@ async def calendar_events(update: Update, context: CallbackContext):
     await update.message.reply_text(message)
 
 async def amazon_orders(update: Update, context: CallbackContext):
-    logger.info("telegram.weather option called")
+    logger.info("telegram.amazon_orders option called")
     city = ' '.join(context.args) if context.args else 'Calgary'
     result = get_weather(city)
     await update.message.reply_text(str(result))
