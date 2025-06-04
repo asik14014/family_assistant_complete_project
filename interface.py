@@ -1,6 +1,7 @@
 import os
+import urllib.parse
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from services.weather_client import get_weather
 from services.holiday_client import get_next_holiday
 from services.todoist_client import get_tasks
@@ -22,11 +23,12 @@ def connect_seller():
         "client_id": CLIENT_ID,
         "redirect_uri": REDIRECT_URI,
     })
-    return redirect(f"https://sellercentral.amazon.com/apps/authorize/consent?{query}")
+    url = f"https://sellercentral.amazon.com/apps/authorize/consent?{query}"
+    return RedirectResponse(url)
 
 @app.route("/oauth2callback")
-def oauth2callback():
-    code = request.args.get("code")
+def oauth2callback(request: Request):
+    code = request.query_params.get("code")
     # 1. Сохрани code для обмена на токен
     # 2. Выполни обмен code -> access_token (через библиотеку или вручную)
     return "✅ Authorization complete."
