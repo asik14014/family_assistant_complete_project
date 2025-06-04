@@ -23,9 +23,8 @@ def connect_seller():
         "client_id": CLIENT_ID,
         "redirect_uri": REDIRECT_URI,
     })
-    return RedirectResponse(
-        f"https://sellercentral.amazon.com/apps/authorize/consent?{query}"
-    )
+    url = f"https://sellercentral.amazon.com/apps/authorize/consent?{query}"
+    return RedirectResponse(url)
 
 @app.route("/oauth2callback")
 def oauth2callback(request: Request):
