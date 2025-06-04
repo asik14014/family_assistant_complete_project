@@ -1,5 +1,39 @@
-/.env
-/credentials_calendar.json
-/credentials_gmail.json
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Venv
+.venv/
+env/
+ENV/
+env.bak/
+venv/
+.venv/
+
+# Dotenv
+.env
+.env.*
+*.env
+*.local
+*.secret
+
+# IDE
+.vscode/
+.idea/
+
+# Logs, DBs, Cache
+*.log
+*.sqlite3
+*.db
+*.swp
+*.bak
+
+# OS
+.DS_Store
+
+# Project-specific
 /db
-/__pycache__
+/credentials_*.json
+pip-selfcheck.json

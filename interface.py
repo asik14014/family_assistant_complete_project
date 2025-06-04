@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from services.weather_client import get_weather
@@ -6,7 +7,29 @@ from services.todoist_client import get_tasks
 from services.calendar_client import get_upcoming_events
 from services.gmail_client import get_unread_email_summary
 
+from dotenv import load_dotenv
+load_dotenv()
+
 app = FastAPI()
+
+CLIENT_ID = os.getenv("LWA_APP_ID")
+REDIRECT_URI = os.getenv("LWA_REDIRECT_URI")
+
+@app.route("/connect_seller")
+def connect_seller():
+    query = urllib.parse.urlencode({
+        "response_type": "code",
+        "client_id": CLIENT_ID,
+        "redirect_uri": REDIRECT_URI,
+    })
+    return redirect(f"https://sellercentral.amazon.com/apps/authorize/consent?{query}")
+
+@app.route("/oauth2callback")
+def oauth2callback():
+    code = request.args.get("code")
+    # 1. Сохрани code для обмена на токен
+    # 2. Выполни обмен code -> access_token (через библиотеку или вручную)
+    return "✅ Authorization complete."
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):

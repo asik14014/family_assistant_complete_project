@@ -10,6 +10,12 @@ python-telegram-bot==20.*
 google-api-python-client
 google-auth
 google-auth-oauthlib
+numpy<2.0
 chromadb
 langchain-openai
-numpy
+python-amazon-sp-api
+psycopg2-binary
+SQLAlchemy
+redis
+nest_asyncio
+boto3

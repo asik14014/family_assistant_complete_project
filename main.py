@@ -12,8 +12,9 @@ import threading
 
 
 def start_bot():
-    asyncio.set_event_loop(asyncio.new_event_loop())
-    run_bot()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(run_bot())
 
 if __name__ == "__main__":
     threading.Thread(target=run_scheduler_loop, daemon=True).start()

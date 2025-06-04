@@ -1,7 +1,16 @@
 import os
 import logging
-from telegram import Update, ForceReply
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackContext
+import asyncio
+import redis
+from telegram import Update
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    filters,
+    ContextTypes,
+    CallbackContext,
+)
 from services.weather_client import get_weather
 from services.holiday_client import get_next_holiday
 from services.todoist_client import add_task, get_tasks
@@ -9,20 +18,44 @@ from services.gmail_client import get_unread_email_summary
 from services.calendar_client import get_upcoming_events
 from orchestrator.autogen_agent import ask_agent, reply_markup
 from memory.memory_manager import save_to_memory
+from database.models import User
+from database.db import get_db_session
+from database.crud import get_user_by_telegram_id, create_or_update_user
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("telegram_bot")
+
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+REDIS_DB = int(os.getenv("REDIS_DB", 0))
+redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.info("telegram.start option called")
     user = update.effective_user
+    telegram_id = user.id
+    logger.info(f"User {telegram_id} used /start")
+
+    auth_key = f"auth:{telegram_id}"
+    cached_auth = redis_client.get(auth_key)
+
+    if cached_auth is None:
+        with get_db_session() as db:
+            user_record = create_or_update_user(
+                db,
+                telegram_id=telegram_id,
+                name=user.username or user.full_name,
+                authorized=False
+            )
+            redis_client.setex(auth_key, 604800, "1" if user_record.amazon_authorized else "0")
+
     welcome_msg = (
-        f"Hi {user.mention_html()}! 👋\n\n"
+        f"Hi {user.name}! 👋\n\n"
         "I'm your Family Assistant. Here's what I can do:\n"
-        "/weather <city> — Get the current weather\n"
+        "/weather — Get the current weather\n"
         "/holiday — See the next public holiday\n"
-        "/addtask <task> — Add a Todoist task\n"
+        "/addtask — Add a Todoist task\n"
         "/tasks — Show your task list\n"
         "/emails — Unread email summary\n"
         "/events — Upcoming calendar events\n\n"
@@ -85,6 +118,12 @@ async def calendar_events(update: Update, context: CallbackContext):
     message = "\n".join([f"{e['summary']} - {e['start']}" for e in events])
     await update.message.reply_text(message)
 
+async def amazon_orders(update: Update, context: CallbackContext):
+    logger.info("telegram.weather option called")
+    city = ' '.join(context.args) if context.args else 'Calgary'
+    result = get_weather(city)
+    await update.message.reply_text(str(result))
+
 async def handle_action(update: Update, action_type: str, param: str):
     if action_type == "CREATE_TASK":
         task = add_task(param)
@@ -124,7 +163,7 @@ async def ai_message_handler(update: Update, context: CallbackContext):
             except Exception as e:
                 logger.warning(f"Failed to parse ACTION directive: {e}")
 
-def run_bot():
+async def run_bot():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -135,7 +174,8 @@ def run_bot():
     app.add_handler(CommandHandler("tasks", list_tasks))
     app.add_handler(CommandHandler("emails", email_summary))
     app.add_handler(CommandHandler("events", calendar_events))
+    #app.add_handler(CommandHandler("amazon orders", amazon_orders))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, ai_message_handler))
 
     logger.info("🤖 Family Assistant bot is now running...")
-    app.run_polling()
+    await app.run_polling()
