@@ -180,7 +180,7 @@ async def listen_to_queue():
 
                     order_id, status = extract_order_status(msg_body)
                     if status == "Shipped" and order_id:
-                        ready_at = datetime.utcnow() + timedelta(days=5, hours=2)
+                      ready_at = datetime.utcnow() + timedelta(days=5, hours=2)
                         expire_at = ready_at + timedelta(days=2)
                         redis_client.xadd(
                             "review_queue",
@@ -192,7 +192,6 @@ async def listen_to_queue():
                         )
                         logger.info(
                             f"Added order {order_id} to review_queue with ready_at {ready_at}"
-                        )
 
                     # Удаляем сообщение из очереди
                     sqs.delete_message(
