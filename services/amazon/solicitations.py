@@ -1,8 +1,10 @@
 import os
+import logging
 import requests
 from services.amazon.amazon_client import get_access_token
 
 SP_API_BASE = "https://sellingpartnerapi-na.amazon.com"
+logger = logging.getLogger(__name__)
 MARKETPLACE_ID = os.getenv("SP_MARKETPLACE_ID", "ATVPDKIKX0DER")
 
 
@@ -15,6 +17,9 @@ def get_review_eligibility(order_id: str) -> bool:
         "Content-Type": "application/json",
     }
     resp = requests.get(url, headers=headers, params=params)
+    logger.info(
+        f"Solicitations eligibility response ({resp.status_code}): {resp.text}"
+    )
     if resp.status_code != 200:
         return False
     data = resp.json()
@@ -34,4 +39,7 @@ def send_review_request(order_id: str) -> bool:
         "Content-Type": "application/json",
     }
     resp = requests.post(url, headers=headers, params=params)
+    logger.info(
+        f"Solicitations send response ({resp.status_code}): {resp.text}"
+    )
     return resp.status_code in (200, 201, 202)

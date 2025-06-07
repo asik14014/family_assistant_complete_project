@@ -16,6 +16,21 @@ from services.amazon.order_api import get_order_details, get_order_items_details
 from services.amazon.order_parser import parse_order_data, parse_order_items
 
 
+def extract_order_status(raw_body: str) -> tuple[str | None, str | None]:
+    """Return order ID and status from a raw SQS notification."""
+    try:
+        outer = json.loads(raw_body)
+        payload = outer.get("Payload", {})
+        notif = payload.get("OrderChangeNotification", {})
+        summary = notif.get("Summary", {})
+        order_id = notif.get("AmazonOrderId")
+        status = summary.get("OrderStatus")
+        return order_id, status
+    except Exception as e:
+        logger.error(f"Failed to parse order status: {e}")
+        return None, None
+
+
 load_dotenv()
 
 # Логгирование
@@ -158,9 +173,17 @@ async def listen_to_queue():
                 authorized_users = get_authorized_user_ids()
                 for msg in messages:
                     msg_body = msg["Body"]
+                    logger.info(f"Received SQS notification: {msg_body}")
                     prepared_message = format_amazon_notification(msg_body)
                     processed = process_message(prepared_message)
                     await notify_users(processed, authorized_users)
+
+                    order_id, status = extract_order_status(msg_body)
+                    if status == "Shipped" and order_id:
+                        redis_client.xadd("review_queue", {"orderId": order_id})
+                        logger.info(
+                            f"Added order {order_id} to review_queue at {datetime.utcnow()}"
+                        )
 
                     # Удаляем сообщение из очереди
                     sqs.delete_message(
