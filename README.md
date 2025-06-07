@@ -21,7 +21,7 @@ A modular Python-based AI assistant for family productivity. Includes:
 3. Run the bot or web app:
    ```bash
    python main.py         # To run scheduler + bot
-   uvicorn web.interface:app --reload   # To run the web dashboard
+   uvicorn interface:app --reload   # To run the web dashboard
    ```
 
 ## Optional
