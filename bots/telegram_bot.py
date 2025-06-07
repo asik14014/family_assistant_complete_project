@@ -7,6 +7,7 @@ from telegram.ext import (
     Application,
     CommandHandler,
     MessageHandler,
+    CallbackQueryHandler,
     filters,
     ContextTypes,
     CallbackContext,
@@ -21,6 +22,8 @@ from memory.memory_manager import save_to_memory
 from database.models import User
 from database.db import get_db_session
 from database.crud import get_user_by_telegram_id, create_or_update_user
+from bots.telegram.handlers.review_handler import button_handler
+from services.streams.review_stream_worker import run_stream_worker
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("telegram_bot")
@@ -175,7 +178,9 @@ async def run_bot():
     app.add_handler(CommandHandler("emails", email_summary))
     app.add_handler(CommandHandler("events", calendar_events))
     #app.add_handler(CommandHandler("amazon orders", amazon_orders))
+    app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, ai_message_handler))
 
     logger.info("🤖 Family Assistant bot is now running...")
+    asyncio.create_task(run_stream_worker(app))
     await app.run_polling()
