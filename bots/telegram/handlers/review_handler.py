@@ -1,4 +1,5 @@
 import logging
+import time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Application
 from telegram.ext import ContextTypes
 from cache.redis_client import redis_client
@@ -21,8 +22,10 @@ def _get_authorized_user_ids() -> list[int]:
 async def send_review_prompt(app: Application, order_id: str):
     """Send review confirmation prompt to admins."""
     if redis_client.exists(f"review_sent:{order_id}"):
+        logger.info(f"Redis check review_sent:{order_id} - exists")
         return
     if redis_client.exists(f"review_pending:{order_id}"):
+        logger.info(f"Redis check review_pending:{order_id} - exists")
         return
 
     keyboard = [
@@ -39,6 +42,9 @@ async def send_review_prompt(app: Application, order_id: str):
         except Exception as e:
             logger.warning(f"Failed to send review prompt to {uid}: {e}")
     redis_client.setex(f"review_pending:{order_id}", REVIEW_PENDING_TTL, 1)
+    logger.info(
+        f"Set review_pending:{order_id} with TTL {REVIEW_PENDING_TTL} at {time.time()}"
+    )
 
 
 async def send_review_request_to_amazon(order_id: str) -> bool:
@@ -62,9 +68,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await query.edit_message_text(f"⚠️ Failed to send review for order {order_id}")
         redis_client.setex(f"review_sent:{order_id}", REVIEW_SENT_TTL, 1)
+        logger.info(
+            f"Set review_sent:{order_id} with TTL {REVIEW_SENT_TTL} at {time.time()}"
+        )
         redis_client.delete(f"review_pending:{order_id}")
+        logger.info(f"Deleted review_pending:{order_id}")
     elif query.data.startswith("review_skip_"):
         order_id = query.data.split("review_skip_")[1]
         await query.edit_message_text(f"⏭ Skipped review request for order {order_id}")
         redis_client.setex(f"review_sent:{order_id}", REVIEW_SENT_TTL, 1)
+        logger.info(
+            f"Set review_sent:{order_id} with TTL {REVIEW_SENT_TTL} at {time.time()}"
+        )
         redis_client.delete(f"review_pending:{order_id}")
+        logger.info(f"Deleted review_pending:{order_id}")
