@@ -92,11 +92,11 @@ def format_amazon_notification(raw_body: str) -> str:
         fulfillment = summary.get("FulfillmentType")
 
         pretty_status = {
-            "Pending": "🆕 Новый заказ.",
-            "Unshipped": "📦 Подтверждён, готов к отгрузке.",
-            "Shipped": "🚚 Заказ отправлен.",
-            "Canceled": "❌ 	Заказ отменён.",
-            "Delivered": "✅ Заказ доставлен",
+            "Pending": "🆕 Новый заказ!",
+            "Unshipped": "📦 Подтверждён, готов к отгрузке!",
+            "Shipped": "🚚 Заказ отправлен!",
+            "Canceled": "❌ 	Заказ отменён!",
+            "Delivered": "✅ Заказ доставлен!",
         }.get(status, status)
 
         formatted_date = (
@@ -135,9 +135,8 @@ def format_amazon_notification(raw_body: str) -> str:
         )
 
         return (
-            f"📦 <b>Заказ!</b>\n\n"
+            f"<b>{pretty_status}</b>\n\n"
             f"🛍️ <b>Товары:</b> {combined_title}\n"
-            f"📌 <b>Статус:</b> {pretty_status}\n"
             f"🔢 <b>Кол-во:</b> {quantity or '—'}\n"
             f"📅 <b>Дата покупки:</b> {formatted_date}\n"
             f"💵 <b>Сумма:</b> {total_str}\n"
