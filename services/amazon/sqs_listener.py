@@ -6,7 +6,7 @@ import redis
 import asyncio
 import telegram
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from database.db import get_db_session
 from database.models import User
 from cache.redis_client import redis_client
@@ -14,6 +14,21 @@ from dotenv import load_dotenv
 from services.amazon.amazon_client import get_access_token
 from services.amazon.order_api import get_order_details, get_order_items_details
 from services.amazon.order_parser import parse_order_data, parse_order_items
+
+
+def extract_order_status(raw_body: str) -> tuple[str | None, str | None]:
+    """Return order ID and status from a raw SQS notification."""
+    try:
+        outer = json.loads(raw_body)
+        payload = outer.get("Payload", {})
+        notif = payload.get("OrderChangeNotification", {})
+        summary = notif.get("Summary", {})
+        order_id = notif.get("AmazonOrderId")
+        status = summary.get("OrderStatus")
+        return order_id, status
+    except Exception as e:
+        logger.error(f"Failed to parse order status: {e}")
+        return None, None
 
 
 load_dotenv()
@@ -158,9 +173,26 @@ async def listen_to_queue():
                 authorized_users = get_authorized_user_ids()
                 for msg in messages:
                     msg_body = msg["Body"]
+                    logger.info(f"Received SQS notification: {msg_body}")
                     prepared_message = format_amazon_notification(msg_body)
                     processed = process_message(prepared_message)
                     await notify_users(processed, authorized_users)
+
+                    order_id, status = extract_order_status(msg_body)
+                    if status == "Shipped" and order_id:
+                        ready_at = datetime.utcnow() + timedelta(days=5, hours=2)
+                        expire_at = ready_at + timedelta(days=2)
+                        redis_client.xadd(
+                            "review_queue",
+                            {
+                                "orderId": order_id,
+                                "ready_at": str(ready_at.timestamp()),
+                                "expire_at": str(expire_at.timestamp()),
+                            },
+                        )
+                        logger.info(
+                            f"Added order {order_id} to review_queue with ready_at {ready_at}"
+                        )
 
                     # Удаляем сообщение из очереди
                     sqs.delete_message(
