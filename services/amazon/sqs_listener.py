@@ -6,7 +6,7 @@ import redis
 import asyncio
 import telegram
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from database.db import get_db_session
 from database.models import User
 from cache.redis_client import redis_client
@@ -180,10 +180,18 @@ async def listen_to_queue():
 
                     order_id, status = extract_order_status(msg_body)
                     if status == "Shipped" and order_id:
-                        redis_client.xadd("review_queue", {"orderId": order_id})
-                        logger.info(
-                            f"Added order {order_id} to review_queue at {datetime.utcnow()}"
+                      ready_at = datetime.utcnow() + timedelta(days=5, hours=2)
+                        expire_at = ready_at + timedelta(days=2)
+                        redis_client.xadd(
+                            "review_queue",
+                            {
+                                "orderId": order_id,
+                                "ready_at": str(ready_at.timestamp()),
+                                "expire_at": str(expire_at.timestamp()),
+                            },
                         )
+                        logger.info(
+                            f"Added order {order_id} to review_queue with ready_at {ready_at}"
 
                     # Удаляем сообщение из очереди
                     sqs.delete_message(
