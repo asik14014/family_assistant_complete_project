@@ -35,13 +35,3 @@ services:
       - .env.docker
     volumes:
       - .:/app
-
-  assistant-review:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    command: python main_review.py
-    env_file:
-      - .env.docker
-    volumes:
-      - .:/app
