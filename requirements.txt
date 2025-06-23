@@ -4,7 +4,8 @@ python-dotenv
 openai
 requests
 cryptography
-sqlalchemy
+sqlalchemy>=1.4,<2.0
+psycopg2-binary
 pydantic
 python-telegram-bot==20.*
 google-api-python-client
@@ -14,8 +15,10 @@ numpy<2.0
 chromadb
 langchain-openai
 python-amazon-sp-api
-psycopg2-binary
-SQLAlchemy
 redis
 nest_asyncio
 boto3
+aiohttp
+beautifulsoup4
+requests_html
+lxml[html_clean]

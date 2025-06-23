@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from database.models import User, GoogleToken, AmazonToken, TodoistToken
+from sqlalchemy.exc import IntegrityError
+from database.models import ProductReview, User, GoogleToken, AmazonToken, TodoistToken
 
 def get_user_by_telegram_id(db: Session, telegram_id: int) -> User | None:
     return db.query(User).filter(User.telegram_id == telegram_id).first()
@@ -55,3 +56,26 @@ def store_todoist_token(db: Session, user_id: int, token_data: dict):
     db.commit()
     db.refresh(token)
     return token
+
+
+def review_exists(session: Session, review_id: str) -> bool:
+    return session.query(
+        session.query(ProductReview).filter_by(review_id=review_id).exists()
+    ).scalar()
+
+def save_review(session: Session, asin: str, review: dict) -> bool:
+    try:
+        new_review = ProductReview(
+            asin=asin,
+            review_id=review['id'],
+            title=review['title'],
+            rating=review['rating'],
+            text=review['text'],
+            review_date=review['date']
+        )
+        session.add(new_review)
+        session.commit()
+        return True
+    except IntegrityError:
+        session.rollback()
+        return False
