@@ -1,0 +1,16 @@
+networks:
+  default:
+    external:
+      name: aimaplus_default
+      
+services:
+
+  assistant-sqs-listener:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python main_reviews.py
+    env_file:
+      - .env.docker
+    volumes:
+      - .:/app

@@ -1,21 +1,24 @@
-# Core
-ccxt          # биржевой адаптер (Binance, OKX и др.)
-fastapi      # API и TradingView вебхук
-uvicorn[standard]  # ASGI-сервер
-
-# DB
-SQLAlchemy    # ORM
-psycopg2-binary  # драйвер Postgres (для SQLite не нужен)
-alembic       # миграции (если решишь использовать)
-
-# Utils
-requests      # Telegram-алерты
-python-dotenv  # .env загрузка
-loguru         # удобные логи
-
-# Monitoring
-prometheus-client  # /metrics endpoint для Prometheus
-
-# Optional (для экспериментов/дашбордов)
-pandas         # анализ данных / backtest
-matplotlib     # простые графики, если нужно
+fastapi
+uvicorn
+python-dotenv
+openai
+requests
+cryptography
+sqlalchemy>=1.4,<2.0
+psycopg2-binary
+pydantic
+python-telegram-bot==20.*
+google-api-python-client
+google-auth
+google-auth-oauthlib
+numpy<2.0
+chromadb
+langchain-openai
+python-amazon-sp-api
+redis
+nest_asyncio
+boto3
+aiohttp
+beautifulsoup4
+requests_html
+lxml[html_clean]
